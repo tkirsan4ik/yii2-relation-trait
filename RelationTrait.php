@@ -88,6 +88,10 @@ trait RelationTrait
         $db = $this->getDb();
         $trans = $db->beginTransaction();
         $isNewRecord = $this->isNewRecord;
+        //Added to reset optimisticLock when an error occurs. (BaseActiveRecord ignores this fact)
+        if ($this->lock){
+            $lock = $this->lock;
+        }
         try {
             if ($this->save()) {
                 $error = false;
@@ -239,6 +243,10 @@ trait RelationTrait
                 if ($error) {
                     $trans->rollback();
                     $this->isNewRecord = $isNewRecord;
+                    //Added to properly reset optimisticLock when an error occurs. (BaseActiveRecord ignores this fact)
+                    if ($this->lock){
+                        $this->lock = $lock;
+                    }
                     return false;
                 }
                 $trans->commit();
@@ -249,6 +257,10 @@ trait RelationTrait
         } catch (Exception $exc) {
             $trans->rollBack();
             $this->isNewRecord = $isNewRecord;
+            //Added to properly reset optimisticLock when an error occurs. (BaseActiveRecord ignores this fact)
+            if ($this->lock){
+                $this->lock = $lock;
+            }
             throw $exc;
         }
     }
